@@ -1,0 +1,43 @@
+# DQN long-only portfolio allocation on the bundled EUR/USD market data.
+# `train` and `tune` only use the 70% training interval and 15% validation.
+# The final 15% is reserved for `rlgames-sb backtest`.
+experiment: trading_forex_dqn
+env: forex-v0
+algo: dqn
+timesteps: 200_000
+eval_episodes: 1
+seed: 42
+
+env_kwargs:
+  train_fraction: 0.70
+  validation_fraction: 0.15
+  initial_cash: 100_000
+  transaction_cost_bps: 10
+  reward_mode: log_return
+  drawdown_penalty: 0.5
+
+hyperparams:
+  learning_rate: 1.0e-4
+  buffer_size: 50_000
+  learning_starts: 2_000
+  batch_size: 64
+  train_freq: 4
+  gradient_steps: 1
+  target_update_interval: 1_000
+  exploration_fraction: 0.20
+  exploration_final_eps: 0.05
+  gamma: 0.99
+  policy_kwargs:
+    net_arch: [128, 128]
+
+tune:
+  trials: 10
+  timesteps: 30_000
+  hyperparams:
+    learning_starts: 1_000
+    buffer_size: 20_000
+  search_space:
+    learning_rate: {type: float, low: 1.0e-5, high: 5.0e-4, log: true}
+    batch_size: {type: categorical, choices: [32, 64, 128]}
+    gamma: {type: float, low: 0.90, high: 0.999}
+    exploration_fraction: {type: float, low: 0.05, high: 0.30}

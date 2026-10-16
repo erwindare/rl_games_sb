@@ -36,35 +36,51 @@ def save_path(algo: str, env_id: str) -> Path:
     return SAVE_DIR / f"{algo}_{env_id.replace('/', '_')}.zip"
 
 
-def create(algo: str, env_id: str, **hyperparams) -> BaseAlgorithm:
+def create(
+    algo: str, env_id: str, *, env_kwargs: dict | None = None, **hyperparams
+) -> BaseAlgorithm:
     """Build a fresh, untrained model: a CNN policy for images, an MLP otherwise.
 
     `hyperparams` go to the SB3 constructor and override the defaults here.
     """
-    env = envs.make(env_id)
+    env = envs.make(env_id, **(env_kwargs or {}))
     if len(env.observation_space.shape) == 3:
         kwargs = {"verbose": 1, **IMAGE_KWARGS.get(algo, {}), **hyperparams}
         return ALGOS[algo]("CnnPolicy", env, **kwargs)
     return ALGOS[algo]("MlpPolicy", env, **{"verbose": 1, **hyperparams})
 
 
-def load(algo: str, env_id: str, device: str = "auto") -> BaseAlgorithm:
+def load(
+    algo: str,
+    env_id: str,
+    device: str = "auto",
+    *,
+    env_kwargs: dict | None = None,
+) -> BaseAlgorithm:
     """Load the saved model for this (algorithm, env) pair.
 
     "auto" means the GPU if there is one, whatever the model trained on.
     """
-    return ALGOS[algo].load(save_path(algo, env_id), env=envs.make(env_id), device=device)
+    return ALGOS[algo].load(
+        save_path(algo, env_id),
+        env=envs.make(env_id, **(env_kwargs or {})),
+        device=device,
+    )
 
 
-def load_or_create(algo: str, env_id: str, **hyperparams) -> BaseAlgorithm:
+def load_or_create(
+    algo: str, env_id: str, *, env_kwargs: dict | None = None, **hyperparams
+) -> BaseAlgorithm:
     """Resume from a save if there is one, otherwise start fresh.
 
     A resumed model keeps the hyperparameters it was saved with, except
     `device`, which applies either way.
     """
     if save_path(algo, env_id).exists():
-        return load(algo, env_id, device=hyperparams.get("device", "auto"))
-    return create(algo, env_id, **hyperparams)
+        return load(
+            algo, env_id, device=hyperparams.get("device", "auto"), env_kwargs=env_kwargs
+        )
+    return create(algo, env_id, env_kwargs=env_kwargs, **hyperparams)
 
 
 def describe_device(device: torch.device | str) -> str:

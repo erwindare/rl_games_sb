@@ -21,9 +21,10 @@ from stable_baselines3.common.logger import HumanOutputFormat, KVWriter, Logger
 
 # Recorded when the model has them; the rest of SB3's attributes are internals.
 _PARAM_NAMES = (
-    "learning_rate", "gamma", "batch_size", "buffer_size", "learning_starts",
+    "learning_rate", "gamma", "seed", "batch_size", "buffer_size", "learning_starts",
     "train_freq", "gradient_steps", "target_update_interval", "exploration_fraction",
-    "exploration_final_eps", "n_steps", "n_epochs", "gae_lambda", "clip_range",
+    "exploration_initial_eps", "exploration_final_eps", "n_steps", "n_epochs",
+    "gae_lambda", "clip_range",
     "ent_coef", "vf_coef", "max_grad_norm", "policy_kwargs",
 )
 

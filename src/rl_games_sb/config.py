@@ -12,6 +12,9 @@ A config file looks like:
     algo: dqn
     timesteps: 1_000_000
     eval_episodes: 10             # greedy evaluation after training, 0 to skip
+    seed: 42
+    env_kwargs:                       # optional environment-specific settings
+      transaction_cost_bps: 10
     hyperparams:                  # passed straight to the SB3 constructor
       learning_rate: 1.0e-4
     tune:                         # used by `rlgames-sb tune` only
@@ -45,7 +48,9 @@ class Config:
     experiment: str
     eval_episodes: int = 10
     hyperparams: dict[str, Any] = field(default_factory=dict)
+    env_kwargs: dict[str, Any] = field(default_factory=dict)
     tune: dict[str, Any] = field(default_factory=dict)
+    seed: int = 42
     path: Path | None = None
 
 
@@ -58,6 +63,11 @@ def load(path: str | Path) -> Config:
         raise ValueError(f"{path}: missing required keys {sorted(missing)}")
     if raw["algo"] not in ALGO_CHOICES:
         raise ValueError(f"{path}: algo must be one of {ALGO_CHOICES}, got {raw['algo']!r}")
+    env_kwargs = raw.get("env_kwargs", {})
+    if env_kwargs is None:
+        env_kwargs = {}
+    if not isinstance(env_kwargs, dict):
+        raise TypeError(f"{path}: env_kwargs must be a mapping")
 
     return Config(
         env=raw["env"],
@@ -66,7 +76,9 @@ def load(path: str | Path) -> Config:
         experiment=raw.get("experiment", raw["env"]),
         eval_episodes=int(raw.get("eval_episodes", 10)),
         hyperparams=raw.get("hyperparams") or {},
+        env_kwargs=env_kwargs,
         tune=raw.get("tune") or {},
+        seed=int(raw.get("seed", 42)),
         path=path,
     )
 

@@ -13,6 +13,7 @@ requires-python = ">=3.11 , <3.12"
 dependencies = [
     "gym-anytrading>=2.0.0",
     "gymnasium[atari,box2d,other]>=1.2.3",
+    "matplotlib>=3.10",
     "mlflow>=3.16.1",
     "optuna>=5.0.0",
     "pyyaml>=6.0.3",

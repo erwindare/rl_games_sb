@@ -4,8 +4,8 @@ Contents:
   - DEFAULT_ENV_ID  : the env used when none is given
   - TRADING_ENV_IDS : the gym-anytrading envs
   - FireOnNewLife   : wrapper that presses FIRE at the start of each life
-  - make()          : create a Gymnasium environment, with Atari preprocessing
-                      for "ALE/..." ids
+  - make()          : construct standard, Atari-preprocessed, or portfolio
+                      trading environments
 """
 import ale_py
 import gym_anytrading
@@ -51,22 +51,31 @@ class FireOnNewLife(gym.Wrapper):
         return obs, reward, terminated, truncated, info
 
 
-def make(env_id: str | None = None, *, render_mode: str | None = None) -> gym.Env:
+def make(
+    env_id: str | None = None, *, render_mode: str | None = None, **env_kwargs
+) -> gym.Env:
     """Create an environment, defaulting to this project's primary env.
 
     Atari envs get the standard DQN preprocessing: 4-frame skip, 84x84
     grayscale, and a stack of the last 4 frames -> uint8 obs of shape (4, 84, 84).
-    Games with a FIRE action also get FireOnNewLife.
+    Trading envs use PortfolioTradingEnv over the market data registered by
+    gym-anytrading. Other environments retain their existing behavior.
     """
     env_id = env_id or DEFAULT_ENV_ID
     if env_id.startswith("ALE/"):
         # frameskip=1 because AtariPreprocessing does its own frame skipping
-        env = gym.make(env_id, render_mode=render_mode, frameskip=1)
+        env = gym.make(env_id, render_mode=render_mode, frameskip=1, **env_kwargs)
         env = gym.wrappers.AtariPreprocessing(env)
         if env.unwrapped.get_action_meanings()[FireOnNewLife.FIRE] == "FIRE":
             env = FireOnNewLife(env)
         env = gym.wrappers.FrameStackObservation(env, 4)
+    elif env_id in TRADING_ENV_IDS:
+        from rl_games_sb.trading import PortfolioTradingEnv
+
+        env = PortfolioTradingEnv(env_id, **env_kwargs)
     else:
+        if env_kwargs:
+            raise TypeError(f"environment options are not supported for {env_id!r}")
         # gym-anytrading returns overlapping views of a price array that never
         # changes. That is harmless, but Gymnasium's env checker warns about
         # it on every command, so the checker is off for those envs.
@@ -74,6 +83,7 @@ def make(env_id: str | None = None, *, render_mode: str | None = None) -> gym.En
             env_id,
             render_mode=render_mode,
             disable_env_checker=env_id in TRADING_ENV_IDS,
+            **env_kwargs,
         )
     # Monitor records episode rewards, which SB3's logging and evaluation read.
     return Monitor(env)

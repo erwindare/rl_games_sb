@@ -1,0 +1,2 @@
+environment,observations,start,end,buy_hold_return,maximum_price_drawdown,mean_period_return,period_return_std,minimum_period_return,maximum_period_return,rolling_20_period_volatility_min,rolling_20_period_volatility_max,volume_available
+forex-v0,6225,01.01.2017 22:00:00.000,29.12.2017 21:00:00.000,0.1411044693852337,-0.042774595185270936,2.1632536301737227e-05,0.0009218463838781932,-0.010213764858655439,0.01572256705623576,0.00026681720446362016,0.003675359606671269,True

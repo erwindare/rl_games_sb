@@ -1,0 +1,2 @@
+environment,observations,start,end,buy_hold_return,maximum_price_drawdown,mean_period_return,period_return_std,minimum_period_return,maximum_period_return,rolling_20_period_volatility_min,rolling_20_period_volatility_max,volume_available
+stocks-v0,2335,2009-05-22 00:00:00,2018-08-29 00:00:00,5.4212726122763675,-0.3042361520907878,0.0009086812479414902,0.015002247537398473,-0.08377499374010289,0.16258426881095445,0.003406391743940456,0.03895518387020259,True

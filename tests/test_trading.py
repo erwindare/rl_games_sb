@@ -6,11 +6,17 @@ from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
+
 from rl_games_sb.trading import (
     ACTION_EXPOSURES,
     PortfolioTradingEnv,
     _run_strategy,
     analyze_market_data,
+    plot_baseline_metrics,
+    plot_dataset_splits,
+    plot_dqn_algorithm_flow,
+    plot_trading_explanations,
+    plot_training_reward_summary,
 )
 
 
@@ -106,6 +112,78 @@ class PortfolioTradingEnvTests(unittest.TestCase):
                 statistics = next(csv.DictReader(file))
             self.assertEqual(statistics["environment"], "stocks-v0")
             self.assertEqual(statistics["observations"], "50")
+
+    def test_explanation_charts_use_a_real_curve_transition(self):
+        with tempfile.TemporaryDirectory() as directory:
+            first_tick, second_tick = 25, 26
+            market_return = self.prices[second_tick] / self.prices[first_tick] - 1
+            fee = 50.0
+            portfolio_after = 100_000 * (1 - 0.5 * 0.001) * (
+                1 + 0.5 * market_return
+            )
+            curve = [
+                {
+                    "timestamp": str(self.frame.index[first_tick]),
+                    "portfolio_value": 100_000.0,
+                    "position": 0.0,
+                    "transaction_cost": 0.0,
+                    "turnover": 0.0,
+                    "market_price": float(self.prices[first_tick]),
+                    "market_return": 0.0,
+                    "reward": 0.0,
+                },
+                {
+                    "timestamp": str(self.frame.index[second_tick]),
+                    "portfolio_value": portfolio_after,
+                    "position": 0.5,
+                    "transaction_cost": fee,
+                    "turnover": 0.5,
+                    "market_price": float(self.prices[second_tick]),
+                    "market_return": market_return,
+                    "reward": float(np.log(portfolio_after / 100_000)),
+                },
+            ]
+            with patch(
+                "rl_games_sb.trading.market_data",
+                return_value=(self.frame, self.prices, 25, 50, 10),
+            ):
+                charts = plot_trading_explanations("stocks-v0", curve, directory)
+
+            self.assertEqual(len(charts), 2)
+            self.assertTrue(all(chart.is_file() and chart.stat().st_size > 0 for chart in charts))
+
+    def test_report_charts_cover_splits_algorithm_and_baselines(self):
+        results = {
+            "DQN": {
+                "cumulative_return": 0.08,
+                "maximum_drawdown": -0.07,
+                "transaction_costs": 2_800.0,
+            },
+            "Buy and hold": {
+                "cumulative_return": 0.48,
+                "maximum_drawdown": -0.15,
+                "transaction_costs": 100.0,
+            },
+            "Random": {
+                "cumulative_return": -0.08,
+                "maximum_drawdown": -0.23,
+                "transaction_costs": 15_000.0,
+            },
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            with patch(
+                "rl_games_sb.trading.market_data",
+                return_value=(self.frame, self.prices, 25, 50, 10),
+            ):
+                split_chart = plot_dataset_splits(directory)
+            algorithm_chart = plot_dqn_algorithm_flow(directory)
+            baseline_chart = plot_baseline_metrics(results, directory)
+            training_chart = plot_training_reward_summary(directory)
+            self.assertTrue(
+                all(path.is_file() and path.stat().st_size > 0 for path in (
+                    split_chart, algorithm_chart, baseline_chart, training_chart
+                ))
+            )
 
 
 if __name__ == "__main__":

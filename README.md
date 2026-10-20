@@ -409,6 +409,23 @@ All strategies pay the same 10 bps turnover fee. The report includes:
   exposure.
 * `equity_curves.csv`: dated equity, position and fees for every step.
 * `backtest.png`: equity curves and invested-fraction time series.
+* `dqn_transition_example.png`: a worked DQN test transition, including the
+  market move, target exposure, portfolio change, fee and reward.
+* `dqn_observation_windows.png`: the causal close-price history used by each
+  state feature at the same decision point.
+* `dataset_splits.png`: chronological training, validation and test ranges for
+  both bundled markets.
+* `dqn_algorithm_flow.png`: the DQN interaction, replay-buffer and target-network
+  update cycle.
+* `baseline_comparison.png`: held-out return, drawdown and transaction costs
+  on separate axes.
+* `training_reward_summary.png`: documented aggregate training/validation
+  rewards; it is not a per-episode learning curve.
+
+`reports/training_summary.csv` records the aggregate rewards and episode counts
+reported for the final financial DQN runs. The per-step/per-episode histories
+are not included in the current workspace, so the summary chart must not be
+interpreted as evidence of convergence.
 
 The return is `final equity / initial equity - 1`; maximum drawdown is the
 minimum of `equity / previous running peak - 1`. Read the equity curve together
